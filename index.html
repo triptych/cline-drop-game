@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Emoji Drop Game</title>
+    <link rel="stylesheet" href="src/css/styles.css">
+    <link rel="stylesheet" href="src/css/layout.css">
+    <link rel="stylesheet" href="src/css/animations.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <div class="menu-bar">
+            <button id="newGame">New</button>
+            <button id="loadGame">Load</button>
+            <button id="saveGame">Save</button>
+            <select id="themeSelect">
+                <option value="fantasy">Fantasy</option>
+                <option value="sports">Sports</option>
+                <option value="travel">Travel</option>
+                <option value="food">Food</option>
+            </select>
+        </div>
+        <div class="next-emoji">
+            <div id="nextEmojiDisplay"></div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div class="score-bar">
+            <span>Score: </span>
+            <span id="scoreDisplay">0</span>
+        </div>
+    </div>
+
+    <script type="module" src="src/js/game.js"></script>
+</body>
+</html>

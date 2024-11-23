@@ -1,0 +1,43 @@
+/* Grid Layout Styles */
+.game-container {
+    display: grid;
+    grid-template-rows: var(--menu-height) var(--next-emoji-height) 1fr var(--score-height);
+    grid-template-areas:
+        "menu"
+        "next"
+        "game"
+        "score";
+}
+
+.menu-bar {
+    grid-area: menu;
+}
+
+.next-emoji {
+    grid-area: next;
+}
+
+#gameCanvas {
+    grid-area: game;
+    width: 100%;
+    height: 100%;
+}
+
+.score-bar {
+    grid-area: score;
+}
+
+/* Ensure proper sizing on iOS devices */
+@supports (-webkit-touch-callout: none) {
+    .game-container {
+        height: -webkit-fill-available;
+    }
+}
+
+/* Prevent scrolling/bouncing on iOS */
+html, body {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overscroll-behavior: none;
+}

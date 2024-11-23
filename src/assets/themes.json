@@ -1,0 +1,54 @@
+{
+  "fantasy": {
+    "name": "Fantasy",
+    "emojis": [
+      { "symbol": "🧙‍♂️", "size": 40, "level": 1, "points": 10 },
+      { "symbol": "🧝‍♀️", "size": 50, "level": 2, "points": 20 },
+      { "symbol": "🧚", "size": 60, "level": 3, "points": 40 },
+      { "symbol": "🦄", "size": 70, "level": 4, "points": 80 },
+      { "symbol": "🐉", "size": 80, "level": 5, "points": 160 },
+      { "symbol": "🦋", "size": 90, "level": 6, "points": 320 },
+      { "symbol": "🌟", "size": 100, "level": 7, "points": 640 },
+      { "symbol": "✨", "size": 110, "level": 8, "points": 1280 }
+    ]
+  },
+  "sports": {
+    "name": "Sports",
+    "emojis": [
+      { "symbol": "⚽", "size": 40, "level": 1, "points": 10 },
+      { "symbol": "🏀", "size": 50, "level": 2, "points": 20 },
+      { "symbol": "🏈", "size": 60, "level": 3, "points": 40 },
+      { "symbol": "⚾", "size": 70, "level": 4, "points": 80 },
+      { "symbol": "🎾", "size": 80, "level": 5, "points": 160 },
+      { "symbol": "🏐", "size": 90, "level": 6, "points": 320 },
+      { "symbol": "🎱", "size": 100, "level": 7, "points": 640 },
+      { "symbol": "🏆", "size": 110, "level": 8, "points": 1280 }
+    ]
+  },
+  "travel": {
+    "name": "Travel",
+    "emojis": [
+      { "symbol": "🚗", "size": 40, "level": 1, "points": 10 },
+      { "symbol": "🚲", "size": 50, "level": 2, "points": 20 },
+      { "symbol": "🛵", "size": 60, "level": 3, "points": 40 },
+      { "symbol": "🚌", "size": 70, "level": 4, "points": 80 },
+      { "symbol": "✈️", "size": 80, "level": 5, "points": 160 },
+      { "symbol": "🚢", "size": 90, "level": 6, "points": 320 },
+      { "symbol": "🚄", "size": 100, "level": 7, "points": 640 },
+      { "symbol": "🚀", "size": 110, "level": 8, "points": 1280 }
+    ]
+  },
+  "food": {
+    "name": "Food",
+    "emojis": [
+      { "symbol": "🍇", "size": 40, "level": 1, "points": 10 },
+      { "symbol": "🍎", "size": 50, "level": 2, "points": 20 },
+      { "symbol": "🍊", "size": 60, "level": 3, "points": 40 },
+      { "symbol": "🍉", "size": 70, "level": 4, "points": 80 },
+      { "symbol": "🍍", "size": 80, "level": 5, "points": 160 },
+      { "symbol": "🍕", "size": 90, "level": 6, "points": 320 },
+      { "symbol": "🍔", "size": 100, "level": 7, "points": 640 },
+      { "symbol": "🎂", "size": 110, "level": 8, "points": 1280 }
+    ]
+  }
+}
