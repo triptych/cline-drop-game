@@ -206,38 +206,48 @@ class EmojiDropGame {
         soundManager.play('drop');
         physicsEngine.dropCurrentEmoji();
 
-        // Give the emoji time to start falling
+        // Wait longer for initial physics to settle
         setTimeout(() => {
+            let stableCount = 0;
+            const requiredStableCounts = 3; // Number of consecutive stable checks required
             const dropCheck = setInterval(() => {
                 const currentBodies = physicsEngine.getBodies();
-                let shouldContinue = true;
+                let allStable = true;
 
                 currentBodies.forEach(body => {
                     if (!body.isStatic &&
                         body.position.y <= GAME_CONFIG.DROP_ZONE_HEIGHT + body.circleRadius) {
-                        // If the body is moving significantly, don't consider it stuck
+                        // If any body is moving significantly, reset stable count
                         if (Math.abs(body.velocity.y) >= 0.1) {
-                            shouldContinue = false;
+                            allStable = false;
                         }
                     }
                 });
 
-                if (shouldContinue) {
+                if (allStable) {
+                    stableCount++;
+                } else {
+                    stableCount = 0;
+                }
+
+                // Only proceed if we've seen stability for multiple consecutive checks
+                if (stableCount >= requiredStableCounts) {
                     clearInterval(dropCheck);
                     this.isDropping = false;
+                    this.cleanupDropZone();
                     this.prepareNextEmoji();
                 }
             }, 100);
 
-            // Failsafe: If the check doesn't complete within 3 seconds, force continue
+            // Increased failsafe timeout
             setTimeout(() => {
                 if (this.isDropping) {
                     this.isDropping = false;
                     this.cleanupDropZone();
                     this.prepareNextEmoji();
                 }
-            }, 3000);
-        }, 500); // Wait for physics to start applying
+            }, 5000); // Increased from 3000 to 5000ms
+        }, 1000); // Increased from 500 to 1000ms for initial settling
     }
 
     handleMerge(emoji, x, y) {

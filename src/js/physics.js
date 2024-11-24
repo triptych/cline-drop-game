@@ -103,16 +103,19 @@ class PhysicsEngine {
         }
     }
 
-    moveCurrentEmoji(x) {
+    moveCurrentEmoji(x, y) {
         if (this.currentEmoji) {
             const radius = this.currentEmoji.circleRadius;
             const minX = radius + GAME_CONFIG.WALL_THICKNESS;
             const maxX = CANVAS_CONFIG.WIDTH - radius - GAME_CONFIG.WALL_THICKNESS;
-            x = Math.max(minX, Math.min(maxX, x));
+            const clampedX = Math.max(minX, Math.min(maxX, x));
+
+            // Clamp Y to drop zone
+            const clampedY = Math.min(y, GAME_CONFIG.DROP_ZONE_HEIGHT);
 
             this.Matter.Body.setPosition(this.currentEmoji, {
-                x: x,
-                y: GAME_CONFIG.DROP_ZONE_HEIGHT
+                x: clampedX,
+                y: clampedY
             });
         }
     }
