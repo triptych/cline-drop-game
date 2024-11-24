@@ -20,7 +20,7 @@ export const PHYSICS_CONFIG = {
 };
 
 export const CANVAS_CONFIG = {
-    WIDTH: 400,  // Adjusted for better mobile experience
+    WIDTH: 600,  // Updated to match container width
     HEIGHT: 600,  // Adjusted for better mobile experience
     BACKGROUND_COLOR: '#ffffff',
     DROP_LINE_COLOR: 'rgba(255, 0, 0, 0.3)',

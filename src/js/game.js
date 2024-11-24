@@ -16,6 +16,7 @@ class EmojiDropGame {
         this.canvasWidth = CANVAS_CONFIG.WIDTH;
         this.canvasHeight = CANVAS_CONFIG.HEIGHT;
         this.isInitialized = false;
+        this.isDropping = false;
 
         this.setupCanvas();
         this.bindEvents();
@@ -83,6 +84,7 @@ class EmojiDropGame {
         this.score = 0;
         this.gameOver = false;
         this.particles = [];
+        this.isDropping = false;
 
         // Clear saved game state when starting new game
         storage.clearGameState();
@@ -98,7 +100,24 @@ class EmojiDropGame {
         }
     }
 
+    cleanupDropZone() {
+        // Get all bodies and remove any that are stuck in the drop zone
+        const bodies = physicsEngine.getBodies();
+        bodies.forEach(body => {
+            if (!body.isStatic && // Skip the current dropping emoji
+                body.position.y <= GAME_CONFIG.DROP_ZONE_HEIGHT + body.circleRadius &&
+                Math.abs(body.velocity.y) < 0.1) { // Only remove if nearly stationary
+                physicsEngine.removeBody(body);
+            }
+        });
+    }
+
     prepareNextEmoji() {
+        if (this.isDropping) return; // Don't prepare new emoji if still dropping
+
+        // Clean up any stuck emojis in the drop zone
+        this.cleanupDropZone();
+
         const emoji = this.nextEmoji || themeManager.getRandomStarterEmoji();
         const x = this.canvasWidth / 2;
         const y = GAME_CONFIG.DROP_ZONE_HEIGHT;
@@ -111,38 +130,71 @@ class EmojiDropGame {
     }
 
     handlePointerMove(e) {
-        if (this.gameOver) return;
+        if (this.gameOver || this.isDropping) return;
         const rect = this.canvas.getBoundingClientRect();
         const x = (e.clientX - rect.left) * (this.canvasWidth / rect.width);
         physicsEngine.moveCurrentEmoji(x);
+        this.cleanupDropZone(); // Clean up orphaned emojis during movement
     }
 
     handleTouchMove(e) {
-        if (this.gameOver) return;
+        if (this.gameOver || this.isDropping) return;
         e.preventDefault();
         const rect = this.canvas.getBoundingClientRect();
         const touch = e.touches[0];
         const x = (touch.clientX - rect.left) * (this.canvasWidth / rect.width);
         physicsEngine.moveCurrentEmoji(x);
+        this.cleanupDropZone(); // Clean up orphaned emojis during movement
     }
 
     handlePointerUp() {
-        if (this.gameOver) return;
+        if (this.gameOver || this.isDropping) return;
         this.dropEmoji();
     }
 
     handleTouchEnd() {
-        if (this.gameOver) return;
+        if (this.gameOver || this.isDropping) return;
         this.dropEmoji();
     }
 
     dropEmoji() {
+        if (this.isDropping) return;
+        this.isDropping = true;
+
         physicsEngine.dropCurrentEmoji();
+
+        // Give the emoji time to start falling
         setTimeout(() => {
-            if (!this.gameOver) {
-                this.prepareNextEmoji();
-            }
-        }, 500);
+            const dropCheck = setInterval(() => {
+                const currentBodies = physicsEngine.getBodies();
+                let shouldContinue = true;
+
+                currentBodies.forEach(body => {
+                    if (!body.isStatic &&
+                        body.position.y <= GAME_CONFIG.DROP_ZONE_HEIGHT + body.circleRadius) {
+                        // If the body is moving significantly, don't consider it stuck
+                        if (Math.abs(body.velocity.y) >= 0.1) {
+                            shouldContinue = false;
+                        }
+                    }
+                });
+
+                if (shouldContinue) {
+                    clearInterval(dropCheck);
+                    this.isDropping = false;
+                    this.prepareNextEmoji();
+                }
+            }, 100);
+
+            // Failsafe: If the check doesn't complete within 3 seconds, force continue
+            setTimeout(() => {
+                if (this.isDropping) {
+                    this.isDropping = false;
+                    this.cleanupDropZone();
+                    this.prepareNextEmoji();
+                }
+            }, 3000);
+        }, 500); // Wait for physics to start applying
     }
 
     handleMerge(emoji, x, y) {
