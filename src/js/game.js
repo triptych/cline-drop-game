@@ -3,6 +3,7 @@ import { scaleCanvas, preventScrolling, createParticles, updateParticles, drawPa
 import storage from './storage.js';
 import themeManager from './themes.js';
 import physicsEngine from './physics.js';
+import soundManager from './sound.js';
 
 class EmojiDropGame {
     constructor() {
@@ -17,6 +18,8 @@ class EmojiDropGame {
         this.canvasHeight = CANVAS_CONFIG.HEIGHT;
         this.isInitialized = false;
         this.isDropping = false;
+        this.mouseY = GAME_CONFIG.DROP_ZONE_HEIGHT;
+        this.isPaused = true;
 
         this.setupCanvas();
         this.bindEvents();
@@ -36,13 +39,22 @@ class EmojiDropGame {
         physicsEngine.initialize(this.canvasWidth, this.canvasHeight);
         physicsEngine.onMerge(this.handleMerge.bind(this));
 
-        // Always start a new game on initialization
-        this.startNewGame();
-
-        // Start game loop
+        // Start game loop but stay paused
         this.gameLoop();
-        this.setupAutoSave();
         this.isInitialized = true;
+    }
+
+    startGame() {
+        // Remove splash screen
+        const splashScreen = document.querySelector('.splash-screen');
+        splashScreen.classList.add('hide');
+
+        // Initialize sound
+        soundManager.play('drop');
+
+        this.isPaused = false;
+        this.startNewGame();
+        this.setupAutoSave();
     }
 
     setupCanvas() {
@@ -62,6 +74,9 @@ class EmojiDropGame {
     }
 
     bindEvents() {
+        // Start game button
+        document.querySelector('.start-button').addEventListener('click', () => this.startGame());
+
         // Touch and mouse events for emoji dropping
         this.canvas.addEventListener('mousemove', this.handlePointerMove.bind(this));
         this.canvas.addEventListener('mouseup', this.handlePointerUp.bind(this));
@@ -85,6 +100,8 @@ class EmojiDropGame {
         this.gameOver = false;
         this.particles = [];
         this.isDropping = false;
+        this.mouseY = GAME_CONFIG.DROP_ZONE_HEIGHT;
+        this.isPaused = false;
 
         // Clear saved game state when starting new game
         storage.clearGameState();
@@ -113,16 +130,15 @@ class EmojiDropGame {
     }
 
     prepareNextEmoji() {
-        if (this.isDropping) return; // Don't prepare new emoji if still dropping
+        if (this.isDropping || this.isPaused) return;
 
         // Clean up any stuck emojis in the drop zone
         this.cleanupDropZone();
 
         const emoji = this.nextEmoji || themeManager.getRandomStarterEmoji();
         const x = this.canvasWidth / 2;
-        const y = GAME_CONFIG.DROP_ZONE_HEIGHT;
 
-        const body = physicsEngine.createEmoji(x, y, emoji);
+        const body = physicsEngine.createEmoji(x, this.mouseY, emoji);
         physicsEngine.setCurrentEmoji(body);
 
         this.nextEmoji = themeManager.getRandomStarterEmoji();
@@ -130,30 +146,32 @@ class EmojiDropGame {
     }
 
     handlePointerMove(e) {
-        if (this.gameOver || this.isDropping) return;
+        if (this.gameOver || this.isDropping || this.isPaused) return;
         const rect = this.canvas.getBoundingClientRect();
         const x = (e.clientX - rect.left) * (this.canvasWidth / rect.width);
-        physicsEngine.moveCurrentEmoji(x);
-        this.cleanupDropZone(); // Clean up orphaned emojis during movement
+        const y = (e.clientY - rect.top) * (this.canvasHeight / rect.height);
+        this.mouseY = Math.min(y, GAME_CONFIG.DROP_ZONE_HEIGHT);
+        physicsEngine.moveCurrentEmoji(x, this.mouseY);
     }
 
     handleTouchMove(e) {
-        if (this.gameOver || this.isDropping) return;
+        if (this.gameOver || this.isDropping || this.isPaused) return;
         e.preventDefault();
         const rect = this.canvas.getBoundingClientRect();
         const touch = e.touches[0];
         const x = (touch.clientX - rect.left) * (this.canvasWidth / rect.width);
-        physicsEngine.moveCurrentEmoji(x);
-        this.cleanupDropZone(); // Clean up orphaned emojis during movement
+        const y = (touch.clientY - rect.top) * (this.canvasHeight / rect.height);
+        this.mouseY = Math.min(y, GAME_CONFIG.DROP_ZONE_HEIGHT);
+        physicsEngine.moveCurrentEmoji(x, this.mouseY);
     }
 
     handlePointerUp() {
-        if (this.gameOver || this.isDropping) return;
+        if (this.gameOver || this.isDropping || this.isPaused) return;
         this.dropEmoji();
     }
 
     handleTouchEnd() {
-        if (this.gameOver || this.isDropping) return;
+        if (this.gameOver || this.isDropping || this.isPaused) return;
         this.dropEmoji();
     }
 
@@ -161,6 +179,7 @@ class EmojiDropGame {
         if (this.isDropping) return;
         this.isDropping = true;
 
+        soundManager.play('drop');
         physicsEngine.dropCurrentEmoji();
 
         // Give the emoji time to start falling
@@ -203,6 +222,7 @@ class EmojiDropGame {
             const mergedBody = physicsEngine.createEmoji(x, y, nextEmoji);
             this.updateScore(nextEmoji.points);
             this.createMergeEffect(x, y);
+            soundManager.play('merge');
         }
     }
 
@@ -213,10 +233,29 @@ class EmojiDropGame {
 
     updateScore(points = 0) {
         this.score += points;
-        document.getElementById(DOM_IDS.SCORE_DISPLAY).textContent = formatScore(this.score);
+        const scoreDisplay = document.getElementById(DOM_IDS.SCORE_DISPLAY);
+        scoreDisplay.textContent = formatScore(this.score);
+
+        if (points > 0) {
+            scoreDisplay.classList.remove('score-pop');
+            void scoreDisplay.offsetWidth; // Trigger reflow
+            scoreDisplay.classList.add('score-pop');
+        }
 
         if (storage.saveHighScore(this.score)) {
-            // Could add high score animation here
+            this.createHighScoreEffect();
+        }
+    }
+
+    createHighScoreEffect() {
+        const scoreBar = document.querySelector('.score-bar');
+        for (let i = 0; i < 10; i++) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.left = `${Math.random() * 100}%`;
+            sparkle.style.top = `${Math.random() * 100}%`;
+            scoreBar.appendChild(sparkle);
+            setTimeout(() => sparkle.remove(), 800);
         }
     }
 
@@ -227,18 +266,17 @@ class EmojiDropGame {
     }
 
     checkGameOver() {
-        if (!this.gameOver && physicsEngine.isGameOver()) {
+        if (!this.gameOver && !this.isPaused && physicsEngine.isGameOver()) {
             this.gameOver = true;
             this.handleGameOver();
         }
     }
 
     handleGameOver() {
+        soundManager.play('gameOver');
         storage.saveHighScore(this.score);
-        // Clear saved game state on game over
         storage.clearGameState();
 
-        // Clear auto-save interval
         if (this.autoSaveInterval) {
             clearInterval(this.autoSaveInterval);
             this.autoSaveInterval = null;
@@ -250,15 +288,21 @@ class EmojiDropGame {
             <div class="game-over-content">
                 <h2>Game Over!</h2>
                 <p>Score: ${formatScore(this.score)}</p>
-                <button onclick="document.querySelector('.game-over').remove(); new EmojiDropGame();">Play Again</button>
+                <button class="start-button">Start Over</button>
             </div>
         `;
         document.body.appendChild(gameOverDiv);
         setTimeout(() => gameOverDiv.classList.add('show'), 100);
+
+        // Add event listener to the new start button
+        gameOverDiv.querySelector('.start-button').addEventListener('click', () => {
+            gameOverDiv.remove();
+            this.startNewGame();
+        });
     }
 
     saveGame() {
-        if (!this.gameOver) {
+        if (!this.gameOver && !this.isPaused) {
             const gameState = {
                 score: this.score,
                 nextEmoji: this.nextEmoji,
@@ -298,26 +342,33 @@ class EmojiDropGame {
             clearInterval(this.autoSaveInterval);
         }
         this.autoSaveInterval = setInterval(() => {
-            if (!this.gameOver) {
+            if (!this.gameOver && !this.isPaused) {
                 this.saveGame();
             }
         }, GAME_CONFIG.AUTO_SAVE_INTERVAL);
     }
 
     render() {
-        // Clear canvas
-        this.ctx.fillStyle = CANVAS_CONFIG.BACKGROUND_COLOR;
+        // Clear canvas with gradient background
+        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvasHeight);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.9)');
+        this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-        // Draw drop line
+        // Draw drop line with gradient
+        const lineGradient = this.ctx.createLinearGradient(0, GAME_CONFIG.DROP_ZONE_HEIGHT, this.canvasWidth, GAME_CONFIG.DROP_ZONE_HEIGHT);
+        lineGradient.addColorStop(0, 'rgba(108, 92, 231, 0.2)');
+        lineGradient.addColorStop(0.5, 'rgba(108, 92, 231, 0.5)');
+        lineGradient.addColorStop(1, 'rgba(108, 92, 231, 0.2)');
         this.ctx.beginPath();
-        this.ctx.strokeStyle = CANVAS_CONFIG.DROP_LINE_COLOR;
+        this.ctx.strokeStyle = lineGradient;
         this.ctx.lineWidth = CANVAS_CONFIG.DROP_LINE_WIDTH;
         this.ctx.moveTo(0, GAME_CONFIG.DROP_ZONE_HEIGHT);
         this.ctx.lineTo(this.canvasWidth, GAME_CONFIG.DROP_ZONE_HEIGHT);
         this.ctx.stroke();
 
-        // Draw emojis
+        // Draw emojis with shadow
         physicsEngine.getBodies().forEach(body => {
             this.ctx.save();
             this.ctx.translate(body.position.x, body.position.y);
@@ -325,6 +376,13 @@ class EmojiDropGame {
             this.ctx.font = `${body.emoji.size}px Arial`;
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
+
+            // Draw shadow
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            this.ctx.fillText(body.emoji.symbol, 2, 2);
+
+            // Draw emoji
+            this.ctx.fillStyle = '#000';
             this.ctx.fillText(body.emoji.symbol, 0, 0);
             this.ctx.restore();
         });
@@ -335,7 +393,7 @@ class EmojiDropGame {
     }
 
     gameLoop() {
-        if (!this.gameOver) {
+        if (!this.gameOver && !this.isPaused) {
             this.checkGameOver();
         }
 
