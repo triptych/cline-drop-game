@@ -22,9 +22,28 @@ class EmojiDropGame {
         this.mouseY = GAME_CONFIG.DROP_ZONE_HEIGHT;
         this.isPaused = true;
 
+        // Background color handling
+        this.pastelColors = [
+            'rgba(255, 223, 223, 0.95)', // Soft pink
+            'rgba(223, 255, 223, 0.95)', // Soft green
+            'rgba(223, 223, 255, 0.95)', // Soft blue
+            'rgba(255, 255, 223, 0.95)', // Soft yellow
+            'rgba(255, 223, 255, 0.95)', // Soft purple
+            'rgba(223, 255, 255, 0.95)'  // Soft cyan
+        ];
+        this.currentColorIndex = 0;
+        this.backgroundColorStart = this.pastelColors[0];
+        this.backgroundColorEnd = this.adjustAlpha(this.backgroundColorStart, 0.9);
+        this.colorTransitionProgress = 0;
+        this.isTransitioning = false;
+
         this.setupCanvas();
         this.bindEvents();
         this.initializeGame();
+    }
+
+    adjustAlpha(rgba, newAlpha) {
+        return rgba.replace(/[\d.]+\)$/, `${newAlpha})`);
     }
 
     async initializeGame() {
@@ -122,6 +141,11 @@ class EmojiDropGame {
         this.mouseX = this.canvasWidth / 2;
         this.mouseY = GAME_CONFIG.DROP_ZONE_HEIGHT;
         this.isPaused = false;
+        this.currentColorIndex = 0;
+        this.backgroundColorStart = this.pastelColors[0];
+        this.backgroundColorEnd = this.adjustAlpha(this.backgroundColorStart, 0.9);
+        this.colorTransitionProgress = 0;
+        this.isTransitioning = false;
 
         // Clear saved game state when starting new game
         storage.clearGameState();
@@ -257,6 +281,13 @@ class EmojiDropGame {
             this.updateScore(nextEmoji.points);
             this.createMergeEffect(x, y);
             soundManager.play('merge');
+
+            // Change background color
+            this.currentColorIndex = (this.currentColorIndex + 1) % this.pastelColors.length;
+            this.backgroundColorStart = this.pastelColors[this.currentColorIndex];
+            this.backgroundColorEnd = this.adjustAlpha(this.backgroundColorStart, 0.9);
+            this.colorTransitionProgress = 0;
+            this.isTransitioning = true;
         }
     }
 
@@ -385,8 +416,8 @@ class EmojiDropGame {
     render() {
         // Clear canvas with gradient background
         const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvasHeight);
-        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.9)');
+        gradient.addColorStop(0, this.backgroundColorStart);
+        gradient.addColorStop(1, this.backgroundColorEnd);
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 

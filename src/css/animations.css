@@ -15,6 +15,17 @@
     to { transform: translateY(0); }
 }
 
+/* Background flash animation for merges */
+@keyframes bg-flash {
+    0% { background-color: rgba(255, 255, 255, 0.95); }
+    50% { background-color: rgba(230, 240, 255, 0.95); }
+    100% { background-color: rgba(255, 255, 255, 0.95); }
+}
+
+.bg-flash {
+    animation: bg-flash 0.4s ease-out;
+}
+
 /* Animation classes */
 .pop {
     animation: pop 0.3s ease-out;
