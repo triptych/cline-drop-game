@@ -87,6 +87,10 @@ class PhysicsEngine {
         return body;
     }
 
+    getCurrentEmoji() {
+        return this.currentEmoji;
+    }
+
     setCurrentEmoji(body) {
         this.currentEmoji = body;
         this.Matter.Body.setStatic(body, true);

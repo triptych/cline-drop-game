@@ -18,6 +18,7 @@ class EmojiDropGame {
         this.canvasHeight = CANVAS_CONFIG.HEIGHT;
         this.isInitialized = false;
         this.isDropping = false;
+        this.mouseX = this.canvasWidth / 2;
         this.mouseY = GAME_CONFIG.DROP_ZONE_HEIGHT;
         this.isPaused = true;
 
@@ -34,6 +35,9 @@ class EmojiDropGame {
         await themeManager.loadThemes();
         const savedTheme = storage.getCurrentTheme();
         themeManager.setTheme(savedTheme);
+
+        // Update the theme dropdown to reflect the current theme
+        document.getElementById(DOM_IDS.THEME_SELECT).value = savedTheme;
 
         // Initialize physics with fixed dimensions
         physicsEngine.initialize(this.canvasWidth, this.canvasHeight);
@@ -92,6 +96,21 @@ class EmojiDropGame {
         document.getElementById(DOM_IDS.THEME_SELECT).addEventListener('change', (e) => {
             themeManager.setTheme(e.target.value);
             storage.saveCurrentTheme(e.target.value);
+
+            // Update current dropping emoji to match new theme
+            const currentEmoji = physicsEngine.getCurrentEmoji();
+            if (currentEmoji) {
+                const currentLevel = currentEmoji.emoji.level;
+                const newEmoji = themeManager.getEmojiByLevel(currentLevel);
+                currentEmoji.emoji = newEmoji;
+            }
+
+            // Update next emoji to match new theme
+            if (this.nextEmoji) {
+                const nextLevel = this.nextEmoji.level;
+                this.nextEmoji = themeManager.getEmojiByLevel(nextLevel);
+                this.updateNextEmojiDisplay();
+            }
         });
     }
 
@@ -100,6 +119,7 @@ class EmojiDropGame {
         this.gameOver = false;
         this.particles = [];
         this.isDropping = false;
+        this.mouseX = this.canvasWidth / 2;
         this.mouseY = GAME_CONFIG.DROP_ZONE_HEIGHT;
         this.isPaused = false;
 
@@ -136,7 +156,9 @@ class EmojiDropGame {
         this.cleanupDropZone();
 
         const emoji = this.nextEmoji || themeManager.getRandomStarterEmoji();
-        const x = this.canvasWidth / 2;
+
+        // Use the current mouse X position for spawning
+        const x = Math.max(emoji.size, Math.min(this.mouseX, this.canvasWidth - emoji.size));
 
         const body = physicsEngine.createEmoji(x, this.mouseY, emoji);
         physicsEngine.setCurrentEmoji(body);
@@ -150,8 +172,9 @@ class EmojiDropGame {
         const rect = this.canvas.getBoundingClientRect();
         const x = (e.clientX - rect.left) * (this.canvasWidth / rect.width);
         const y = (e.clientY - rect.top) * (this.canvasHeight / rect.height);
+        this.mouseX = x;
         this.mouseY = Math.min(y, GAME_CONFIG.DROP_ZONE_HEIGHT);
-        physicsEngine.moveCurrentEmoji(x, this.mouseY);
+        physicsEngine.moveCurrentEmoji(this.mouseX, this.mouseY);
     }
 
     handleTouchMove(e) {
@@ -161,8 +184,9 @@ class EmojiDropGame {
         const touch = e.touches[0];
         const x = (touch.clientX - rect.left) * (this.canvasWidth / rect.width);
         const y = (touch.clientY - rect.top) * (this.canvasHeight / rect.height);
+        this.mouseX = x;
         this.mouseY = Math.min(y, GAME_CONFIG.DROP_ZONE_HEIGHT);
-        physicsEngine.moveCurrentEmoji(x, this.mouseY);
+        physicsEngine.moveCurrentEmoji(this.mouseX, this.mouseY);
     }
 
     handlePointerUp() {
