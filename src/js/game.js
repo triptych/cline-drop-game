@@ -150,10 +150,10 @@ class EmojiDropGame {
     }
 
     prepareNextEmoji() {
-        if (this.isDropping || this.isPaused) return;
-
-        // Clean up any stuck emojis in the drop zone
+        // Clean up any stuck emojis in the drop zone before any other checks
         this.cleanupDropZone();
+
+        if (this.isDropping || this.isPaused) return;
 
         const emoji = this.nextEmoji || themeManager.getRandomStarterEmoji();
 
